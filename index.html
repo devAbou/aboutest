@@ -25,12 +25,12 @@ h2 {
 #camera {
     width: 100%;
     max-width: 400px;
-    height: 250px;
+    height: 300px;        /* altura aumentada para melhor leitura */
     margin: auto;
     overflow: hidden;
     border-radius: 8px;
     background: black;
-    display: none; /* começa escondido */
+    display: none;         /* começa escondido */
 }
 
 #camera video {
@@ -95,17 +95,23 @@ svg {
 let codigosLidos = [];
 let scannerAtivo = false;
 
-// Função para iniciar o scanner
+// Iniciar scanner
 function iniciarScanner() {
-    if (scannerAtivo) return; // já iniciado
+    if (scannerAtivo) return;
 
     Quagga.init({
         inputStream: {
             type: "LiveStream",
             target: document.querySelector('#camera'),
             constraints: {
-                facingMode: "environment"
+                facingMode: "environment",
+                width: { min: 640 },
+                height: { min: 480 }
             }
+        },
+        locator: {
+            patchSize: "medium", // melhora detecção
+            halfSample: true
         },
         decoder: {
             readers: ["ean_reader"]
@@ -123,7 +129,7 @@ function iniciarScanner() {
     });
 }
 
-// Função para parar o scanner
+// Parar scanner
 function pararScanner() {
     if (!scannerAtivo) return;
 
@@ -140,7 +146,7 @@ Quagga.onDetected(function(data) {
     if (codigo.length === 13 && !codigosLidos.includes(codigo)) {
         codigosLidos.push(codigo);
         atualizarLista();
-        pararScanner();  // Fecha a câmera ao detectar o código
+        pararScanner();  // fecha câmera ao detectar código
     }
 });
 
