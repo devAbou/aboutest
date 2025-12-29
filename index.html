@@ -2,18 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Scanner EAN-13 com Flash</title>
+<title>Scanner de Código de Barras Melhorado</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <style>
-body {
-    font-family: Arial, sans-serif;
-    padding: 10px;
-    background: #f4f4f4;
-}
+body { font-family: Arial, sans-serif; padding: 10px; background: #f4f4f4; }
 h2 { text-align: center; }
 
 #camera {
@@ -53,7 +49,7 @@ svg { margin-bottom: 15px; }
 </head>
 <body>
 
-<h2>Scanner de Código EAN-13 com Flash</h2>
+<h2>Scanner de Código de Barras Melhorado</h2>
 
 <button id="btnCamera">Abrir câmera</button>
 <button id="btnFlash">Ligar flash</button>
@@ -61,7 +57,7 @@ svg { margin-bottom: 15px; }
 <div id="camera"></div>
 
 <button onclick="limparLista()">Limpar lista de códigos</button>
-<button onclick="gerarImagens()">Gerar imagem de código</button>
+<button onclick="gerarImagens()">Gerar imagens dos códigos</button>
 
 <div id="lista">
     <h3>Códigos escaneados:</h3>
@@ -86,13 +82,24 @@ function iniciarScanner() {
         inputStream: {
             type: "LiveStream",
             target: document.querySelector('#camera'),
-            constraints: {
-                facingMode: "environment"
-            }
+            constraints: { facingMode: "environment" }
+        },
+        locator: {
+            patchSize: "x-small",
+            halfSample: false
         },
         decoder: {
-            readers: ["ean_reader"]
-        }
+            readers: [
+                "ean_reader",
+                "ean_8_reader",
+                "upc_reader",
+                "upc_e_reader",
+                "code_128_reader",
+                "code_39_reader"
+            ]
+        },
+        locate: true,
+        numOfWorkers: navigator.hardwareConcurrency || 4
     }, function(err) {
         if (err) {
             console.error(err);
@@ -104,8 +111,8 @@ function iniciarScanner() {
         document.getElementById("camera").style.display = "block";
         document.getElementById("btnCamera").textContent = "Fechar câmera";
 
-        // Pega o track de vídeo para ativar o flash
-        const tracks = Quagga.CameraAccess.getActiveTrack().getSettings ? [Quagga.CameraAccess.getActiveTrack()] : [];
+        // Pega a track de vídeo para ativar o flash
+        const tracks = Quagga.CameraAccess.getActiveTrack() ? [Quagga.CameraAccess.getActiveTrack()] : [];
         if (tracks.length > 0) streamTrack = tracks[0];
     });
 }
@@ -113,29 +120,23 @@ function iniciarScanner() {
 // Parar scanner
 function pararScanner() {
     if (!scannerAtivo) return;
-
     Quagga.stop();
     scannerAtivo = false;
     document.getElementById("camera").style.display = "none";
     document.getElementById("btnCamera").textContent = "Abrir câmera";
 
-    // Desliga flash ao fechar câmera
-    if (flashAtivo) toggleFlash();
+    if (flashAtivo) toggleFlash(); // desliga flash ao fechar
 }
 
 // Alternar flash
 async function toggleFlash() {
-    if (!streamTrack) {
-        alert("Flash não suportado neste dispositivo");
-        return;
-    }
+    if (!streamTrack) { alert("Flash não suportado neste dispositivo"); return; }
     try {
         flashAtivo = !flashAtivo;
         await streamTrack.applyConstraints({ advanced: [{ torch: flashAtivo }] });
         document.getElementById("btnFlash").textContent = flashAtivo ? "Desligar flash" : "Ligar flash";
     } catch (e) {
-        alert("Não foi possível ativar o flash neste dispositivo");
-        console.error(e);
+        alert("Não foi possível ativar o flash");
         flashAtivo = false;
         document.getElementById("btnFlash").textContent = "Ligar flash";
     }
@@ -144,10 +145,10 @@ async function toggleFlash() {
 // Detectar código
 Quagga.onDetected(function(data) {
     const codigo = data.codeResult.code;
-    if (codigo.length === 13 && !codigosLidos.includes(codigo)) {
+    if (!codigosLidos.includes(codigo)) {
         codigosLidos.push(codigo);
         atualizarLista();
-        pararScanner();  // Fecha câmera ao detectar
+        pararScanner(); // fecha câmera ao detectar
     }
 });
 
@@ -181,7 +182,7 @@ function gerarImagens() {
         container.appendChild(svg);
 
         JsBarcode(svg, codigo, {
-            format: "ean13",
+            format: codigo.length === 13 ? "ean13" : "code128",
             width: 2,
             height: 80,
             displayValue: true
@@ -191,11 +192,8 @@ function gerarImagens() {
 
 // Botões
 document.getElementById("btnCamera").addEventListener("click", () => {
-    if (scannerAtivo) {
-        pararScanner();
-    } else {
-        iniciarScanner();
-    }
+    if (scannerAtivo) pararScanner();
+    else iniciarScanner();
 });
 
 document.getElementById("btnFlash").addEventListener("click", toggleFlash);
