@@ -14,8 +14,6 @@ h2 { text-align: center; }
 
 #camera {
     width: 100%;
-    max-width: 500px;
-    height: 500px;
     margin: auto;
     overflow: hidden;
     border-radius: 8px;
@@ -85,8 +83,8 @@ function iniciarScanner() {
             constraints: { facingMode: "environment" }
         },
         locator: {
-            patchSize: "x-small",   // aumenta precisão para códigos pequenos
-            halfSample: false       // não reduz resolução
+            patchSize: "x-large",   // aumenta precisão para códigos pequenos
+            halfSample: true       // não reduz resolução
         },
         decoder: {
             readers: [
