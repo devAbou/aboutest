@@ -2,10 +2,13 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Scanner de Código de Barras Ultra</title>
+<title>Scanner EAN-13</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- QuaggaJS (scanner) -->
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
+
+<!-- JsBarcode (gerar código de barras) -->
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <style>
@@ -14,22 +17,27 @@ body {
     padding: 10px;
     background: #f4f4f4;
 }
-h2 { text-align: center; }
+
+h2 {
+    text-align: center;
+}
+
 #camera {
     width: 100%;
     max-width: 400px;
-    height: 350px;        /* altura maior para melhor detecção */
+    height: 250px;        /* Altura fixa menor */
     margin: auto;
     overflow: hidden;
     border-radius: 8px;
     background: black;
-    display: none;
 }
+
 #camera video {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover;
 }
+
 button {
     width: 100%;
     padding: 12px;
@@ -37,26 +45,39 @@ button {
     font-size: 16px;
     cursor: pointer;
 }
-#lista, #barcodes {
+
+#lista {
     background: #fff;
     padding: 10px;
     margin-top: 10px;
     border-radius: 5px;
 }
-.codigo { padding: 5px; border-bottom: 1px solid #ddd; }
-svg { margin-bottom: 15px; }
+
+.codigo {
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+#barcodes {
+    margin-top: 20px;
+    background: #fff;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+svg {
+    margin-bottom: 15px;
+}
 </style>
 </head>
 <body>
 
-<h2>Scanner de Código de Barras Ultra</h2>
-
-<button id="btnCamera">Abrir câmera</button>
+<h2>Scanner de Código EAN-13</h2>
 
 <div id="camera"></div>
 
 <button onclick="limparLista()">Limpar lista de códigos</button>
-<button onclick="gerarImagens()">Gerar imagens dos códigos</button>
+<button onclick="gerarImagens()">Gerar imagem de código</button>
 
 <div id="lista">
     <h3>Códigos escaneados:</h3>
@@ -69,73 +90,39 @@ svg { margin-bottom: 15px; }
 
 <script>
 let codigosLidos = [];
-let scannerAtivo = false;
 
-// Iniciar scanner contínuo ultra otimizado
-function iniciarScanner() {
-    if (scannerAtivo) return;
-
-    Quagga.init({
-        inputStream: {
-            type: "LiveStream",
-            target: document.querySelector('#camera'),
-            constraints: {
-                facingMode: "environment",
-                width: { min: 640 },
-                height: { min: 480 }
-            }
-        },
-        locator: {
-            patchSize: "x-small",  // detecta códigos menores ou distantes
-            halfSample: false       // processa frame completo para maior precisão
-        },
-        decoder: {
-            readers: [
-                "ean_reader",
-                "ean_8_reader",
-                "code_128_reader",
-                "code_39_reader",
-                "upc_reader",
-                "upc_e_reader"
-            ]
-        },
-        locate: true,                    // detecta códigos fora do centro
-        numOfWorkers: navigator.hardwareConcurrency || 4
-    }, function(err) {
-        if (err) {
-            console.error(err);
-            alert("Erro ao acessar a câmera");
-            return;
+// Iniciar scanner
+Quagga.init({
+    inputStream: {
+        type: "LiveStream",
+        target: document.querySelector('#camera'),
+        constraints: {
+            facingMode: "environment"
         }
-        Quagga.start();
-        scannerAtivo = true;
-        document.getElementById("camera").style.display = "block";
-        document.getElementById("btnCamera").textContent = "Fechar câmera";
-    });
-}
+    },
+    decoder: {
+        readers: ["ean_reader"]
+    }
+}, function(err) {
+    if (err) {
+        console.error(err);
+        alert("Erro ao acessar a câmera");
+        return;
+    }
+    Quagga.start();
+});
 
-// Parar scanner
-function pararScanner() {
-    if (!scannerAtivo) return;
-
-    Quagga.stop();
-    scannerAtivo = false;
-    document.getElementById("camera").style.display = "none";
-    document.getElementById("btnCamera").textContent = "Abrir câmera";
-}
-
-// Detectar códigos continuamente
+// Detectar código
 Quagga.onDetected(function(data) {
     const codigo = data.codeResult.code;
 
-    // Adiciona código à lista se ainda não estiver presente
-    if (!codigosLidos.includes(codigo)) {
+    if (codigo.length === 13 && !codigosLidos.includes(codigo)) {
         codigosLidos.push(codigo);
         atualizarLista();
     }
 });
 
-// Atualizar lista de códigos
+// Atualizar lista
 function atualizarLista() {
     const div = document.getElementById("codigos");
     div.innerHTML = "";
@@ -154,7 +141,7 @@ function limparLista() {
     document.getElementById("barcodes").innerHTML = "<h3>Imagens dos códigos:</h3>";
 }
 
-// Gerar imagens dos códigos
+// Gerar imagens EAN-13
 function gerarImagens() {
     const container = document.getElementById("barcodes");
     container.innerHTML = "<h3>Imagens dos códigos:</h3>";
@@ -165,22 +152,13 @@ function gerarImagens() {
         container.appendChild(svg);
 
         JsBarcode(svg, codigo, {
-            format: codigo.length === 13 ? "ean13" : "code128",
+            format: "ean13",
             width: 2,
             height: 80,
             displayValue: true
         });
     });
 }
-
-// Botão abrir/fechar câmera
-document.getElementById("btnCamera").addEventListener("click", () => {
-    if (scannerAtivo) {
-        pararScanner();
-    } else {
-        iniciarScanner();
-    }
-});
 </script>
 
 </body>
