@@ -22,11 +22,23 @@ h2 {
     text-align: center;
 }
 
+/* #camera {
+    width: 100%;
+    max-width: 400px;
+    height: 250px;        /* Altura fixa menor */
+    margin: auto;
+    overflow: hidden;
+    border-radius: 8px;
+    background: black;
+} */
+
 #camera {
     width: 100%;
     max-width: 400px;
     margin: auto;
 }
+
+
 #camera video {
     width: 100% !important;
     height: 100% !important;
@@ -69,8 +81,6 @@ svg {
 
 <h2>Scanner de Código EAN-13</h2>
 
-<button id="btnCamera">Abrir câmera</button>
-
 <div id="camera"></div>
 
 <button onclick="limparLista()">Limpar lista de códigos</button>
@@ -87,35 +97,76 @@ svg {
 
 <script>
 let codigosLidos = [];
-let scannerAtivo = false;
 
-// Função para iniciar o scanner
-function iniciarScanner() {
-    if (scannerAtivo) return;
+// Iniciar scanner
+Quagga.init({
+    inputStream: {
+        type: "LiveStream",
+        target: document.querySelector('#camera'),
+        constraints: {
+            facingMode: "environment"
+        }
+    },
+    decoder: {
+        readers: ["ean_reader"]
+    }
+}, function(err) {
+    if (err) {
+        console.error(err);
+        alert("Erro ao acessar a câmera");
+        return;
+    }
+    Quagga.start();
+});
 
-    Quagga.init({
-        inputStream: {
-            type: "LiveStream",
-            target: document.querySelector('#camera'),
-            constraints: {
-                facingMode: "environment" // sem restrição de resolução
-            }
-        },
-        decoder: {
-            readers: ["ean_reader"]
-        }
-    }, function(err) {
-        if (err) {
-            console.error(err);
-            alert("Erro ao acessar a câmera");
-            return;
-        }
-        Quagga.start();
-        scannerAtivo = true;
-        document.getElementById("camera").style.display = "block";
-        document.getElementById("btnCamera").textContent = "Fechar câmera";
+// Detectar código
+Quagga.onDetected(function(data) {
+    const codigo = data.codeResult.code;
+
+    if (codigo.length === 13 && !codigosLidos.includes(codigo)) {
+        codigosLidos.push(codigo);
+        atualizarLista();
+    }
+});
+
+// Atualizar lista
+function atualizarLista() {
+    const div = document.getElementById("codigos");
+    div.innerHTML = "";
+    codigosLidos.forEach(c => {
+        const item = document.createElement("div");
+        item.className = "codigo";
+        item.textContent = c;
+        div.appendChild(item);
     });
 }
 
-// Função para parar o scanner
-functio
+// Limpar lista
+function limparLista() {
+    codigosLidos = [];
+    document.getElementById("codigos").innerHTML = "";
+    document.getElementById("barcodes").innerHTML = "<h3>Imagens dos códigos:</h3>";
+}
+
+// Gerar imagens EAN-13
+function gerarImagens() {
+    const container = document.getElementById("barcodes");
+    container.innerHTML = "<h3>Imagens dos códigos:</h3>";
+
+    codigosLidos.forEach((codigo, index) => {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.id = "barcode" + index;
+        container.appendChild(svg);
+
+        JsBarcode(svg, codigo, {
+            format: "ean13",
+            width: 2,
+            height: 80,
+            displayValue: true
+        });
+    });
+}
+</script>
+
+</body>
+</html>
