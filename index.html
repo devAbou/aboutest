@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Scanner de Código de Barras Fácil</title>
+<title>Scanner de Código de Barras Ultra</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
@@ -18,7 +18,7 @@ h2 { text-align: center; }
 #camera {
     width: 100%;
     max-width: 400px;
-    height: 300px;
+    height: 350px;        /* altura maior para melhor detecção */
     margin: auto;
     overflow: hidden;
     border-radius: 8px;
@@ -49,7 +49,7 @@ svg { margin-bottom: 15px; }
 </head>
 <body>
 
-<h2>Scanner de Código de Barras Fácil</h2>
+<h2>Scanner de Código de Barras Ultra</h2>
 
 <button id="btnCamera">Abrir câmera</button>
 
@@ -71,7 +71,7 @@ svg { margin-bottom: 15px; }
 let codigosLidos = [];
 let scannerAtivo = false;
 
-// Iniciar scanner contínuo
+// Iniciar scanner contínuo ultra otimizado
 function iniciarScanner() {
     if (scannerAtivo) return;
 
@@ -86,8 +86,8 @@ function iniciarScanner() {
             }
         },
         locator: {
-            patchSize: "medium",
-            halfSample: true
+            patchSize: "x-small",  // detecta códigos menores ou distantes
+            halfSample: false       // processa frame completo para maior precisão
         },
         decoder: {
             readers: [
@@ -99,7 +99,8 @@ function iniciarScanner() {
                 "upc_e_reader"
             ]
         },
-        locate: true // detecta códigos mesmo se não estiver centralizado
+        locate: true,                    // detecta códigos fora do centro
+        numOfWorkers: navigator.hardwareConcurrency || 4
     }, function(err) {
         if (err) {
             console.error(err);
@@ -127,7 +128,7 @@ function pararScanner() {
 Quagga.onDetected(function(data) {
     const codigo = data.codeResult.code;
 
-    // Adiciona somente se ainda não estiver na lista
+    // Adiciona código à lista se ainda não estiver presente
     if (!codigosLidos.includes(codigo)) {
         codigosLidos.push(codigo);
         atualizarLista();
@@ -153,7 +154,7 @@ function limparLista() {
     document.getElementById("barcodes").innerHTML = "<h3>Imagens dos códigos:</h3>";
 }
 
-// Gerar imagens
+// Gerar imagens dos códigos
 function gerarImagens() {
     const container = document.getElementById("barcodes");
     container.innerHTML = "<h3>Imagens dos códigos:</h3>";
