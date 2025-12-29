@@ -25,11 +25,12 @@ h2 {
 #camera {
     width: 100%;
     max-width: 400px;
-    height: 250px;        /* Altura fixa menor */
+    height: 250px;
     margin: auto;
     overflow: hidden;
     border-radius: 8px;
     background: black;
+    display: none; /* começa escondido */
 }
 
 #camera video {
@@ -74,6 +75,8 @@ svg {
 
 <h2>Scanner de Código EAN-13</h2>
 
+<button id="btnCamera">Abrir câmera</button>
+
 <div id="camera"></div>
 
 <button onclick="limparLista()">Limpar lista de códigos</button>
@@ -90,27 +93,45 @@ svg {
 
 <script>
 let codigosLidos = [];
+let scannerAtivo = false;
 
-// Iniciar scanner
-Quagga.init({
-    inputStream: {
-        type: "LiveStream",
-        target: document.querySelector('#camera'),
-        constraints: {
-            facingMode: "environment"
+// Função para iniciar o scanner
+function iniciarScanner() {
+    if (scannerAtivo) return; // já iniciado
+
+    Quagga.init({
+        inputStream: {
+            type: "LiveStream",
+            target: document.querySelector('#camera'),
+            constraints: {
+                facingMode: "environment"
+            }
+        },
+        decoder: {
+            readers: ["ean_reader"]
         }
-    },
-    decoder: {
-        readers: ["ean_reader"]
-    }
-}, function(err) {
-    if (err) {
-        console.error(err);
-        alert("Erro ao acessar a câmera");
-        return;
-    }
-    Quagga.start();
-});
+    }, function(err) {
+        if (err) {
+            console.error(err);
+            alert("Erro ao acessar a câmera");
+            return;
+        }
+        Quagga.start();
+        scannerAtivo = true;
+        document.getElementById("camera").style.display = "block";
+        document.getElementById("btnCamera").textContent = "Fechar câmera";
+    });
+}
+
+// Função para parar o scanner
+function pararScanner() {
+    if (!scannerAtivo) return;
+
+    Quagga.stop();
+    scannerAtivo = false;
+    document.getElementById("camera").style.display = "none";
+    document.getElementById("btnCamera").textContent = "Abrir câmera";
+}
 
 // Detectar código
 Quagga.onDetected(function(data) {
@@ -119,6 +140,7 @@ Quagga.onDetected(function(data) {
     if (codigo.length === 13 && !codigosLidos.includes(codigo)) {
         codigosLidos.push(codigo);
         atualizarLista();
+        pararScanner();  // Fecha a câmera ao detectar o código
     }
 });
 
@@ -159,6 +181,15 @@ function gerarImagens() {
         });
     });
 }
+
+// Botão abrir/fechar câmera
+document.getElementById("btnCamera").addEventListener("click", () => {
+    if (scannerAtivo) {
+        pararScanner();
+    } else {
+        iniciarScanner();
+    }
+});
 </script>
 
 </body>
