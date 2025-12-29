@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Scanner de Código de Barras</title>
+<title>Scanner de Código de Barras Fácil</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
@@ -49,7 +49,7 @@ svg { margin-bottom: 15px; }
 </head>
 <body>
 
-<h2>Scanner de Código de Barras</h2>
+<h2>Scanner de Código de Barras Fácil</h2>
 
 <button id="btnCamera">Abrir câmera</button>
 
@@ -71,7 +71,7 @@ svg { margin-bottom: 15px; }
 let codigosLidos = [];
 let scannerAtivo = false;
 
-// Iniciar scanner
+// Iniciar scanner contínuo
 function iniciarScanner() {
     if (scannerAtivo) return;
 
@@ -98,7 +98,8 @@ function iniciarScanner() {
                 "upc_reader",
                 "upc_e_reader"
             ]
-        }
+        },
+        locate: true // detecta códigos mesmo se não estiver centralizado
     }, function(err) {
         if (err) {
             console.error(err);
@@ -122,18 +123,18 @@ function pararScanner() {
     document.getElementById("btnCamera").textContent = "Abrir câmera";
 }
 
-// Detectar código
+// Detectar códigos continuamente
 Quagga.onDetected(function(data) {
     const codigo = data.codeResult.code;
 
+    // Adiciona somente se ainda não estiver na lista
     if (!codigosLidos.includes(codigo)) {
         codigosLidos.push(codigo);
         atualizarLista();
-        pararScanner(); // Fecha câmera ao detectar
     }
 });
 
-// Atualizar lista
+// Atualizar lista de códigos
 function atualizarLista() {
     const div = document.getElementById("codigos");
     div.innerHTML = "";
