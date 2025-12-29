@@ -24,8 +24,7 @@ h2 {
 
 #camera {
     width: 100%;
-    max-width: 400px;
-    height: 250px;
+    height: auto;  /* altura automática, sem limite */
     margin: auto;
     overflow: hidden;
     border-radius: 8px;
@@ -97,14 +96,14 @@ let scannerAtivo = false;
 
 // Função para iniciar o scanner
 function iniciarScanner() {
-    if (scannerAtivo) return; // já iniciado
+    if (scannerAtivo) return;
 
     Quagga.init({
         inputStream: {
             type: "LiveStream",
             target: document.querySelector('#camera'),
             constraints: {
-                facingMode: "environment"
+                facingMode: "environment" // sem restrição de resolução
             }
         },
         decoder: {
@@ -124,73 +123,4 @@ function iniciarScanner() {
 }
 
 // Função para parar o scanner
-function pararScanner() {
-    if (!scannerAtivo) return;
-
-    Quagga.stop();
-    scannerAtivo = false;
-    document.getElementById("camera").style.display = "none";
-    document.getElementById("btnCamera").textContent = "Abrir câmera";
-}
-
-// Detectar código
-Quagga.onDetected(function(data) {
-    const codigo = data.codeResult.code;
-
-    if (codigo.length === 13 && !codigosLidos.includes(codigo)) {
-        codigosLidos.push(codigo);
-        atualizarLista();
-        pararScanner();  // Fecha a câmera ao detectar o código
-    }
-});
-
-// Atualizar lista
-function atualizarLista() {
-    const div = document.getElementById("codigos");
-    div.innerHTML = "";
-    codigosLidos.forEach(c => {
-        const item = document.createElement("div");
-        item.className = "codigo";
-        item.textContent = c;
-        div.appendChild(item);
-    });
-}
-
-// Limpar lista
-function limparLista() {
-    codigosLidos = [];
-    document.getElementById("codigos").innerHTML = "";
-    document.getElementById("barcodes").innerHTML = "<h3>Imagens dos códigos:</h3>";
-}
-
-// Gerar imagens EAN-13
-function gerarImagens() {
-    const container = document.getElementById("barcodes");
-    container.innerHTML = "<h3>Imagens dos códigos:</h3>";
-
-    codigosLidos.forEach((codigo, index) => {
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.id = "barcode" + index;
-        container.appendChild(svg);
-
-        JsBarcode(svg, codigo, {
-            format: "ean13",
-            width: 2,
-            height: 80,
-            displayValue: true
-        });
-    });
-}
-
-// Botão abrir/fechar câmera
-document.getElementById("btnCamera").addEventListener("click", () => {
-    if (scannerAtivo) {
-        pararScanner();
-    } else {
-        iniciarScanner();
-    }
-});
-</script>
-
-</body>
-</html>
+functio
