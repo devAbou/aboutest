@@ -14,8 +14,8 @@ h2 { text-align: center; }
 
 #camera {
     width: 100%;
-    max-width: 400px;
-    height: 250px;
+    max-width: 500px;
+    height: 500px;
     margin: auto;
     overflow: hidden;
     border-radius: 8px;
@@ -74,7 +74,7 @@ let scannerAtivo = false;
 let streamTrack = null;
 let flashAtivo = false;
 
-// Iniciar scanner
+// Iniciar scanner otimizado
 function iniciarScanner() {
     if (scannerAtivo) return;
 
@@ -85,8 +85,8 @@ function iniciarScanner() {
             constraints: { facingMode: "environment" }
         },
         locator: {
-            patchSize: "x-small",
-            halfSample: false
+            patchSize: "x-small",   // aumenta precisão para códigos pequenos
+            halfSample: false       // não reduz resolução
         },
         decoder: {
             readers: [
@@ -98,8 +98,8 @@ function iniciarScanner() {
                 "code_39_reader"
             ]
         },
-        locate: true,
-        numOfWorkers: navigator.hardwareConcurrency || 4
+        locate: true,               // tenta localizar o código na imagem
+        numOfWorkers: navigator.hardwareConcurrency || 4 // threads para velocidade
     }, function(err) {
         if (err) {
             console.error(err);
@@ -111,7 +111,7 @@ function iniciarScanner() {
         document.getElementById("camera").style.display = "block";
         document.getElementById("btnCamera").textContent = "Fechar câmera";
 
-        // Pega a track de vídeo para ativar o flash
+        // Pega a track de vídeo para ativar flash
         const tracks = Quagga.CameraAccess.getActiveTrack() ? [Quagga.CameraAccess.getActiveTrack()] : [];
         if (tracks.length > 0) streamTrack = tracks[0];
     });
