@@ -2,13 +2,10 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Scanner EAN-13</title>
+<title>Scanner EAN-13 com Flash</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- QuaggaJS (scanner) -->
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
-
-<!-- JsBarcode (gerar código de barras) -->
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <style>
@@ -17,10 +14,7 @@ body {
     padding: 10px;
     background: #f4f4f4;
 }
-
-h2 {
-    text-align: center;
-}
+h2 { text-align: center; }
 
 #camera {
     width: 100%;
@@ -30,9 +24,8 @@ h2 {
     overflow: hidden;
     border-radius: 8px;
     background: black;
-    display: none; /* começa escondido */
+    display: none;
 }
-
 #camera video {
     width: 100% !important;
     height: 100% !important;
@@ -47,35 +40,23 @@ button {
     cursor: pointer;
 }
 
-#lista {
+#lista, #barcodes {
     background: #fff;
     padding: 10px;
     margin-top: 10px;
     border-radius: 5px;
 }
 
-.codigo {
-    padding: 5px;
-    border-bottom: 1px solid #ddd;
-}
-
-#barcodes {
-    margin-top: 20px;
-    background: #fff;
-    padding: 10px;
-    border-radius: 5px;
-}
-
-svg {
-    margin-bottom: 15px;
-}
+.codigo { padding: 5px; border-bottom: 1px solid #ddd; }
+svg { margin-bottom: 15px; }
 </style>
 </head>
 <body>
 
-<h2>Scanner de Código EAN-13</h2>
+<h2>Scanner de Código EAN-13 com Flash</h2>
 
 <button id="btnCamera">Abrir câmera</button>
+<button id="btnFlash">Ligar flash</button>
 
 <div id="camera"></div>
 
@@ -94,10 +75,12 @@ svg {
 <script>
 let codigosLidos = [];
 let scannerAtivo = false;
+let streamTrack = null;
+let flashAtivo = false;
 
-// Função para iniciar o scanner
+// Iniciar scanner
 function iniciarScanner() {
-    if (scannerAtivo) return; // já iniciado
+    if (scannerAtivo) return;
 
     Quagga.init({
         inputStream: {
@@ -120,10 +103,14 @@ function iniciarScanner() {
         scannerAtivo = true;
         document.getElementById("camera").style.display = "block";
         document.getElementById("btnCamera").textContent = "Fechar câmera";
+
+        // Pega o track de vídeo para ativar o flash
+        const tracks = Quagga.CameraAccess.getActiveTrack().getSettings ? [Quagga.CameraAccess.getActiveTrack()] : [];
+        if (tracks.length > 0) streamTrack = tracks[0];
     });
 }
 
-// Função para parar o scanner
+// Parar scanner
 function pararScanner() {
     if (!scannerAtivo) return;
 
@@ -131,16 +118,36 @@ function pararScanner() {
     scannerAtivo = false;
     document.getElementById("camera").style.display = "none";
     document.getElementById("btnCamera").textContent = "Abrir câmera";
+
+    // Desliga flash ao fechar câmera
+    if (flashAtivo) toggleFlash();
+}
+
+// Alternar flash
+async function toggleFlash() {
+    if (!streamTrack) {
+        alert("Flash não suportado neste dispositivo");
+        return;
+    }
+    try {
+        flashAtivo = !flashAtivo;
+        await streamTrack.applyConstraints({ advanced: [{ torch: flashAtivo }] });
+        document.getElementById("btnFlash").textContent = flashAtivo ? "Desligar flash" : "Ligar flash";
+    } catch (e) {
+        alert("Não foi possível ativar o flash neste dispositivo");
+        console.error(e);
+        flashAtivo = false;
+        document.getElementById("btnFlash").textContent = "Ligar flash";
+    }
 }
 
 // Detectar código
 Quagga.onDetected(function(data) {
     const codigo = data.codeResult.code;
-
     if (codigo.length === 13 && !codigosLidos.includes(codigo)) {
         codigosLidos.push(codigo);
         atualizarLista();
-        pararScanner();  // Fecha a câmera ao detectar o código
+        pararScanner();  // Fecha câmera ao detectar
     }
 });
 
@@ -163,7 +170,7 @@ function limparLista() {
     document.getElementById("barcodes").innerHTML = "<h3>Imagens dos códigos:</h3>";
 }
 
-// Gerar imagens EAN-13
+// Gerar imagens
 function gerarImagens() {
     const container = document.getElementById("barcodes");
     container.innerHTML = "<h3>Imagens dos códigos:</h3>";
@@ -182,7 +189,7 @@ function gerarImagens() {
     });
 }
 
-// Botão abrir/fechar câmera
+// Botões
 document.getElementById("btnCamera").addEventListener("click", () => {
     if (scannerAtivo) {
         pararScanner();
@@ -190,6 +197,8 @@ document.getElementById("btnCamera").addEventListener("click", () => {
         iniciarScanner();
     }
 });
+
+document.getElementById("btnFlash").addEventListener("click", toggleFlash);
 </script>
 
 </body>
