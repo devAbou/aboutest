@@ -88,6 +88,18 @@ svg {
 <button onclick="limparLista()">Limpar lista de códigos</button>
 <button onclick="gerarImagens()">Gerar imagens dos códigos</button>
 
+    <div style="display:flex; gap:5px; margin-bottom:10px;">
+    <input
+        id="inputCodigo"
+        type="text"
+        placeholder="Digite o código (13 números)"
+        maxlength="13"
+        style="flex:1; padding:10px; font-size:16px;"
+    >
+    <button onclick="adicionarCodigoManual()">Adicionar</button>
+</div>
+
+
 <div id="lista">
     <h3>Códigos escaneados:</h3>
     <div id="codigos"></div>
@@ -96,7 +108,6 @@ svg {
 <div id="barcodes">
     <h3>Imagens dos códigos:</h3>
 </div>
-
 <script>
 let codigosLidos = [];
 let scannerAtivo = false;
@@ -112,7 +123,47 @@ video.muted = true;
 video.autoplay = true;
 document.getElementById("camera").appendChild(video);
 
-// Iniciar scanner
+/* =========================
+   VALIDAÇÃO (EAN-13)
+========================= */
+function codigoValido(codigo) {
+    return /^\d{13}$/.test(codigo);
+}
+
+/* =========================
+   ADICIONAR CÓDIGO (ÚNICO)
+========================= */
+function adicionarCodigo(codigo) {
+    if (!codigoValido(codigo)) {
+        alert("Código inválido. Use exatamente 13 números.");
+        return false;
+    }
+
+    if (codigosLidos.includes(codigo)) {
+        alert("Este código já foi adicionado.");
+        return false;
+    }
+
+    codigosLidos.push(codigo);
+    atualizarLista();
+    return true;
+}
+
+/* =========================
+   ENTRADA MANUAL
+========================= */
+function adicionarCodigoManual() {
+    const input = document.getElementById("inputCodigo");
+    const codigo = input.value.trim();
+
+    if (adicionarCodigo(codigo)) {
+        input.value = "";
+    }
+}
+
+/* =========================
+   SCANNER
+========================= */
 async function iniciarScanner() {
     if (scannerAtivo) return;
 
@@ -122,14 +173,7 @@ async function iniciarScanner() {
     }
 
     detector = new BarcodeDetector({
-        formats: [
-            "ean_13",
-            "ean_8",
-            "upc_a",
-            "upc_e",
-            "code_128",
-            "code_39"
-        ]
+        formats: ["ean_13"]
     });
 
     try {
@@ -154,7 +198,6 @@ async function iniciarScanner() {
     }
 }
 
-// Parar scanner
 function pararScanner() {
     if (!scannerAtivo) return;
 
@@ -173,7 +216,6 @@ function pararScanner() {
     if (flashAtivo) toggleFlash();
 }
 
-// Detectar código
 async function detectarCodigo() {
     if (!detector || !scannerAtivo) return;
 
@@ -183,9 +225,7 @@ async function detectarCodigo() {
         for (const barcode of barcodes) {
             const codigo = barcode.rawValue;
 
-            if (!codigosLidos.includes(codigo)) {
-                codigosLidos.push(codigo);
-                atualizarLista();
+            if (adicionarCodigo(codigo)) {
                 pararScanner();
                 break;
             }
@@ -195,7 +235,9 @@ async function detectarCodigo() {
     }
 }
 
-// Flash
+/* =========================
+   FLASH
+========================= */
 async function toggleFlash() {
     if (!track) {
         alert("Flash não suportado neste dispositivo");
@@ -216,7 +258,9 @@ async function toggleFlash() {
     }
 }
 
-// Atualizar lista
+/* =========================
+   LISTA
+========================= */
 function atualizarLista() {
     const div = document.getElementById("codigos");
     div.innerHTML = "";
@@ -237,17 +281,16 @@ function atualizarLista() {
         item.appendChild(btn);
         div.appendChild(item);
     });
-
-    gerarImagens();
 }
 
-// Remover código
 function removerCodigo(index) {
     codigosLidos.splice(index, 1);
     atualizarLista();
 }
 
-// Limpar lista
+/* =========================
+   LIMPAR
+========================= */
 function limparLista() {
     codigosLidos = [];
     document.getElementById("codigos").innerHTML = "";
@@ -255,7 +298,9 @@ function limparLista() {
         "<h3>Imagens dos códigos:</h3>";
 }
 
-// Gerar imagens
+/* =========================
+   GERAR IMAGENS
+========================= */
 function gerarImagens() {
     const container = document.getElementById("barcodes");
     container.innerHTML = "<h3>Imagens dos códigos:</h3>";
@@ -268,7 +313,7 @@ function gerarImagens() {
         container.appendChild(svg);
 
         JsBarcode(svg, codigo, {
-            format: codigo.length === 13 ? "ean13" : "code128",
+            format: "ean13",
             width: 2,
             height: 80,
             displayValue: true
@@ -276,13 +321,16 @@ function gerarImagens() {
     });
 }
 
-// Botões
+/* =========================
+   BOTÕES
+========================= */
 document.getElementById("btnCamera").onclick = () => {
     scannerAtivo ? pararScanner() : iniciarScanner();
 };
 
 document.getElementById("btnFlash").onclick = toggleFlash;
 </script>
+
 
 </body>
 </html>
