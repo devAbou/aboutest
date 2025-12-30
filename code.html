@@ -1,3 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Scanner de Código de Barras</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- JsBarcode para gerar imagens -->
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 10px;
+    background: #f4f4f4;
+}
+
+h2 {
+    text-align: center;
+}
+
+#camera {
+    width: 100%;
+    max-width: 500px;
+    height: 400px;
+    margin: auto;
+    overflow: hidden;
+    border-radius: 8px;
+    background: black;
+    display: none;
+}
+
+#camera video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#lista, #barcodes {
+    background: #fff;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+.codigo {
+    padding: 6px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.remover {
+    background: red;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+svg {
+    margin-bottom: 15px;
+}
+</style>
+</head>
+<body>
+
+<h2>📷 Scanner de Código de Barras</h2>
+
+<button id="btnCamera">Abrir câmera</button>
+<button id="btnFlash">Ligar flash</button>
+
+<div id="camera"></div>
+
+<button onclick="limparLista()">Limpar lista de códigos</button>
+<button onclick="gerarImagens()">Gerar imagens dos códigos</button>
+
+<div id="lista">
+    <h3>Códigos escaneados:</h3>
+    <div id="codigos"></div>
+</div>
+
+<div id="barcodes">
+    <h3>Imagens dos códigos:</h3>
+</div>
+
 <script>
 let codigosLidos = [];
 let scannerAtivo = false;
@@ -9,9 +108,8 @@ let scanInterval = null;
 
 const video = document.createElement("video");
 video.setAttribute("playsinline", true);
-video.style.width = "100%";
-video.style.height = "100%";
-video.style.objectFit = "cover";
+video.muted = true;
+video.autoplay = true;
 document.getElementById("camera").appendChild(video);
 
 // Iniciar scanner
@@ -185,3 +283,6 @@ document.getElementById("btnCamera").onclick = () => {
 
 document.getElementById("btnFlash").onclick = toggleFlash;
 </script>
+
+</body>
+</html>
