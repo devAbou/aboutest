@@ -1,3 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Scanner de Código de Barras</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 10px;
+    background: #f4f4f4;
+}
+
+h2 {
+    text-align: center;
+}
+
+#camera {
+    width: 100%;
+    max-width: 500px;
+    height: 400px;
+    margin: auto;
+    overflow: hidden;
+    border-radius: 8px;
+    background: black;
+    display: none;
+}
+
+#camera video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#lista, #barcodes {
+    background: #fff;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+.codigo {
+    padding: 6px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.remover {
+    background: red;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+svg {
+    margin-bottom: 15px;
+}
+</style>
+</head>
+<body>
+
+<h2>Scanner de Código de Barras</h2>
+<h2>por: Luiz Bazar</h2>
+
+<button id="btnCamera">Abrir câmera</button>
+<button id="btnFlash">Ligar flash</button>
+
+<div id="camera"></div>
+
+<button onclick="limparLista()">Limpar lista de códigos</button>
+<button onclick="gerarImagens()">Gerar imagens dos códigos</button>
+
+<div id="lista">
+    <h3>Códigos escaneados:</h3>
+    <div id="codigos"></div>
+</div>
+
+<div id="barcodes">
+    <h3>Imagens dos códigos:</h3>
+</div>
+
 <script>
 let codigosLidos = [];
 let scannerAtivo = false;
@@ -6,141 +106,156 @@ let flashAtivo = false;
 
 // Iniciar scanner
 function iniciarScanner() {
-    if (scannerAtivo) return;
+    if (scannerAtivo) return;
 
-    Quagga.init({
-        inputStream: {
-            type: "LiveStream",
-            target: document.querySelector('#camera'),
-            constraints: { facingMode: "environment" }
-        },
-        locator: {
-            patchSize: "large",
-            halfSample: true
-        },
-        decoder: {
-            readers: [
-                "ean_reader",
-                "ean_8_reader",
-                "upc_reader",
-                "upc_e_reader",
-                "code_128_reader",
-                "code_39_reader"
-            ]
-        },
-        locate: true,
-        numOfWorkers: navigator.hardwareConcurrency || 4
-    }, function(err) {
-        if (err) {
-            console.error(err);
-            alert("Erro ao acessar a câmera");
-            return;
-        }
-        Quagga.start();
-        scannerAtivo = true;
-        document.getElementById("camera").style.display = "block";
-        document.getElementById("btnCamera").textContent = "Fechar câmera";
+    Quagga.init({
+        inputStream: {
+            type: "LiveStream",
+            target: document.querySelector('#camera'),
+            constraints: { facingMode: "environment" }
+        },
+        locator: {
+            patchSize: "large",
+            halfSample: true
+        },
+        decoder: {
+            readers: [
+                "ean_reader",
+                "ean_8_reader",
+                "upc_reader",
+                "upc_e_reader",
+                "code_128_reader",
+                "code_39_reader"
+            ]
+        },
+        locate: true,
+        numOfWorkers: navigator.hardwareConcurrency || 4
+    }, function(err) {
+        if (err) {
+            alert("Erro ao acessar a câmera");
+            return;
+        }
 
-        // Pega a track de vídeo para ativar o flash
-        const tracks = Quagga.CameraAccess.getActiveTrack() ? [Quagga.CameraAccess.getActiveTrack()] : [];
-        if (tracks.length > 0) streamTrack = tracks[0];
-    });
+        Quagga.start();
+        scannerAtivo = true;
+        document.getElementById("camera").style.display = "block";
+        document.getElementById("btnCamera").textContent = "Fechar câmera";
+
+        const track = Quagga.CameraAccess.getActiveTrack();
+        if (track) streamTrack = track;
+    });
 }
 
 // Parar scanner
 function pararScanner() {
-    if (!scannerAtivo) return;
-    Quagga.stop();
-    scannerAtivo = false;
-    document.getElementById("camera").style.display = "none";
-    document.getElementById("btnCamera").textContent = "Abrir câmera";
+    if (!scannerAtivo) return;
 
-    if (flashAtivo) toggleFlash(); // desliga flash ao fechar
+    Quagga.stop();
+    scannerAtivo = false;
+    document.getElementById("camera").style.display = "none";
+    document.getElementById("btnCamera").textContent = "Abrir câmera";
+
+    if (flashAtivo) toggleFlash();
 }
 
-// Alternar flash
+// Flash
 async function toggleFlash() {
-    if (!streamTrack) { alert("Flash não suportado neste dispositivo"); return; }
-    try {
-        flashAtivo = !flashAtivo;
-        await streamTrack.applyConstraints({ advanced: [{ torch: flashAtivo }] });
-        document.getElementById("btnFlash").textContent = flashAtivo ? "Desligar flash" : "Ligar flash";
-    } catch (e) {
-        alert("Não foi possível ativar o flash");
-        flashAtivo = false;
-        document.getElementById("btnFlash").textContent = "Ligar flash";
-    }
+    if (!streamTrack) {
+        alert("Flash não suportado neste dispositivo");
+        return;
+    }
+
+    try {
+        flashAtivo = !flashAtivo;
+        await streamTrack.applyConstraints({
+            advanced: [{ torch: flashAtivo }]
+        });
+
+        document.getElementById("btnFlash").textContent =
+            flashAtivo ? "Desligar flash" : "Ligar flash";
+    } catch {
+        alert("Não foi possível ativar o flash");
+        flashAtivo = false;
+    }
 }
 
 // Detectar código
 Quagga.onDetected(function(data) {
-    const codigo = data.codeResult.code;
-    if (!codigosLidos.includes(codigo)) {
-        codigosLidos.push(codigo);
-        atualizarLista();
-        pararScanner(); // fecha câmera ao detectar
-    }
+    const codigo = data.codeResult.code;
+
+    if (!codigosLidos.includes(codigo)) {
+        codigosLidos.push(codigo);
+        atualizarLista();
+        pararScanner();
+    }
 });
 
-// Atualizar lista com opção de excluir
+// Atualizar lista com botão X
 function atualizarLista() {
-    const div = document.getElementById("codigos");
-    div.innerHTML = "";
-    codigosLidos.forEach((c, index) => {
-        const item = document.createElement("div");
-        item.className = "codigo";
-        item.textContent = c;
+    const div = document.getElementById("codigos");
+    div.innerHTML = "";
 
-        // Criar botão de exclusão (X)
-        const excluirBtn = document.createElement("span");
-        excluirBtn.textContent = "X";
-        excluirBtn.style.color = "red";
-        excluirBtn.style.cursor = "pointer";
-        excluirBtn.style.marginLeft = "10px";
-        excluirBtn.addEventListener("click", () => excluirCodigo(index));
+    codigosLidos.forEach((codigo, index) => {
+        const item = document.createElement("div");
+        item.className = "codigo";
 
-        item.appendChild(excluirBtn);
-        div.appendChild(item);
-    });
+        const texto = document.createElement("span");
+        texto.textContent = codigo;
+
+        const btn = document.createElement("button");
+        btn.textContent = "×";
+        btn.className = "remover";
+        btn.onclick = () => removerCodigo(index);
+
+        item.appendChild(texto);
+        item.appendChild(btn);
+        div.appendChild(item);
+    });
 }
 
-// Função para excluir código
-function excluirCodigo(index) {
-    codigosLidos.splice(index, 1); // Remove o código do array
-    atualizarLista(); // Atualiza a lista
+// Remover código individual
+function removerCodigo(index) {
+    codigosLidos.splice(index, 1);
+    atualizarLista();
+    gerarImagens();
 }
 
-// Limpar lista
+// Limpar tudo
 function limparLista() {
-    codigosLidos = [];
-    document.getElementById("codigos").innerHTML = "";
-    document.getElementById("barcodes").innerHTML = "<h3>Imagens dos códigos:</h3>";
+    codigosLidos = [];
+    document.getElementById("codigos").innerHTML = "";
+    document.getElementById("barcodes").innerHTML =
+        "<h3>Imagens dos códigos:</h3>";
 }
 
 // Gerar imagens
 function gerarImagens() {
-    const container = document.getElementById("barcodes");
-    container.innerHTML = "<h3>Imagens dos códigos:</h3>";
+    const container = document.getElementById("barcodes");
+    container.innerHTML = "<h3>Imagens dos códigos:</h3>";
 
-    codigosLidos.forEach((codigo, index) => {
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.id = "barcode" + index;
-        container.appendChild(svg);
+    codigosLidos.forEach((codigo, index) => {
+        const svg = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg"
+        );
+        container.appendChild(svg);
 
-        JsBarcode(svg, codigo, {
-            format: codigo.length === 13 ? "ean13" : "code128",
-            width: 2,
-            height: 80,
-            displayValue: true
-        });
-    });
+        JsBarcode(svg, codigo, {
+            format: codigo.length === 13 ? "ean13" : "code128",
+            width: 2,
+            height: 80,
+            displayValue: true
+        });
+    });
 }
 
 // Botões
-document.getElementById("btnCamera").addEventListener("click", () => {
-    if (scannerAtivo) pararScanner();
-    else iniciarScanner();
-});
+document.getElementById("btnCamera").onclick = () => {
+    scannerAtivo ? pararScanner() : iniciarScanner();
+};
 
-document.getElementById("btnFlash").addEventListener("click", toggleFlash);
+document.getElementById("btnFlash").onclick = toggleFlash;
 </script>
+
+</body>
+</html>
