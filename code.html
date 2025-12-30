@@ -1,155 +1,73 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Scanner de Código de Barras</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-
-<style>
-body {
-    font-family: Arial, sans-serif;
-    padding: 10px;
-    background: #f4f4f4;
-}
-
-h2 {
-    text-align: center;
-}
-
-#camera {
-    width: 100%;
-    max-width: 500px;
-    height: 400px;
-    margin: auto;
-    overflow: hidden;
-    border-radius: 8px;
-    background: black;
-    display: none;
-}
-
-#camera video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover;
-}
-
-button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 8px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-#lista, #barcodes {
-    background: #fff;
-    padding: 10px;
-    margin-top: 10px;
-    border-radius: 5px;
-}
-
-.codigo {
-    padding: 6px;
-    border-bottom: 1px solid #ddd;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.remover {
-    background: red;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-svg {
-    margin-bottom: 15px;
-}
-</style>
-</head>
-<body>
-
-<h2>Scanner de Código de Barras</h2>
-
-<button id="btnCamera">Abrir câmera</button>
-<button id="btnFlash">Ligar flash</button>
-
-<div id="camera"></div>
-
-<button onclick="limparLista()">Limpar lista de códigos</button>
-<button onclick="gerarImagens()">Gerar imagens dos códigos</button>
-
-<div id="lista">
-    <h3>Códigos escaneados:</h3>
-    <div id="codigos"></div>
-</div>
-
-<div id="barcodes">
-    <h3>Imagens dos códigos:</h3>
-</div>
-
 <script>
 let codigosLidos = [];
 let scannerAtivo = false;
-let streamTrack = null;
+let stream = null;
+let track = null;
 let flashAtivo = false;
+let detector = null;
+let scanInterval = null;
+
+const video = document.createElement("video");
+video.setAttribute("playsinline", true);
+video.style.width = "100%";
+video.style.height = "100%";
+video.style.objectFit = "cover";
+document.getElementById("camera").appendChild(video);
 
 // Iniciar scanner
-function iniciarScanner() {
+async function iniciarScanner() {
     if (scannerAtivo) return;
 
-    Quagga.init({
-        inputStream: {
-            type: "LiveStream",
-            target: document.querySelector('#camera'),
-            constraints: { facingMode: "environment" }
-        },
-        locator: {
-            patchSize: "large",
-            halfSample: false
-        },
-        decoder: {
-            readers: [
-                "ean_reader",
-                "ean_8_reader",
-                "upc_reader",
-                "upc_e_reader",
-                "code_128_reader",
-                "code_39_reader"
-            ]
-        },
-        locate: true,
-        numOfWorkers: navigator.hardwareConcurrency || 4
-    }, function(err) {
-        if (err) {
-            alert("Erro ao acessar a câmera");
-            return;
-        }
+    if (!("BarcodeDetector" in window)) {
+        alert("Seu navegador não suporta leitura de código de barras.");
+        return;
+    }
 
-        Quagga.start();
+    detector = new BarcodeDetector({
+        formats: [
+            "ean_13",
+            "ean_8",
+            "upc_a",
+            "upc_e",
+            "code_128",
+            "code_39"
+        ]
+    });
+
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" }
+        });
+
+        video.srcObject = stream;
+        await video.play();
+
+        track = stream.getVideoTracks()[0];
+
         scannerAtivo = true;
         document.getElementById("camera").style.display = "block";
         document.getElementById("btnCamera").textContent = "Fechar câmera";
 
-        const track = Quagga.CameraAccess.getActiveTrack();
-        if (track) streamTrack = track;
-    });
+        scanInterval = setInterval(detectarCodigo, 600);
+
+    } catch (err) {
+        alert("Erro ao acessar a câmera");
+        console.error(err);
+    }
 }
 
 // Parar scanner
 function pararScanner() {
     if (!scannerAtivo) return;
 
-    Quagga.stop();
+    clearInterval(scanInterval);
+    scanInterval = null;
+
+    if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+    }
+
     scannerAtivo = false;
     document.getElementById("camera").style.display = "none";
     document.getElementById("btnCamera").textContent = "Abrir câmera";
@@ -157,16 +75,38 @@ function pararScanner() {
     if (flashAtivo) toggleFlash();
 }
 
+// Detectar código
+async function detectarCodigo() {
+    if (!detector || !scannerAtivo) return;
+
+    try {
+        const barcodes = await detector.detect(video);
+
+        for (const barcode of barcodes) {
+            const codigo = barcode.rawValue;
+
+            if (!codigosLidos.includes(codigo)) {
+                codigosLidos.push(codigo);
+                atualizarLista();
+                pararScanner();
+                break;
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 // Flash
 async function toggleFlash() {
-    if (!streamTrack) {
+    if (!track) {
         alert("Flash não suportado neste dispositivo");
         return;
     }
 
     try {
         flashAtivo = !flashAtivo;
-        await streamTrack.applyConstraints({
+        await track.applyConstraints({
             advanced: [{ torch: flashAtivo }]
         });
 
@@ -178,18 +118,7 @@ async function toggleFlash() {
     }
 }
 
-// Detectar código
-Quagga.onDetected(function(data) {
-    const codigo = data.codeResult.code;
-
-    if (!codigosLidos.includes(codigo)) {
-        codigosLidos.push(codigo);
-        atualizarLista();
-        pararScanner();
-    }
-});
-
-// Atualizar lista com botão X
+// Atualizar lista
 function atualizarLista() {
     const div = document.getElementById("codigos");
     div.innerHTML = "";
@@ -210,16 +139,17 @@ function atualizarLista() {
         item.appendChild(btn);
         div.appendChild(item);
     });
-}
 
-// Remover código individual
-function removerCodigo(index) {
-    codigosLidos.splice(index, 1);
-    atualizarLista();
     gerarImagens();
 }
 
-// Limpar tudo
+// Remover código
+function removerCodigo(index) {
+    codigosLidos.splice(index, 1);
+    atualizarLista();
+}
+
+// Limpar lista
 function limparLista() {
     codigosLidos = [];
     document.getElementById("codigos").innerHTML = "";
@@ -232,7 +162,7 @@ function gerarImagens() {
     const container = document.getElementById("barcodes");
     container.innerHTML = "<h3>Imagens dos códigos:</h3>";
 
-    codigosLidos.forEach((codigo, index) => {
+    codigosLidos.forEach(codigo => {
         const svg = document.createElementNS(
             "http://www.w3.org/2000/svg",
             "svg"
@@ -255,6 +185,3 @@ document.getElementById("btnCamera").onclick = () => {
 
 document.getElementById("btnFlash").onclick = toggleFlash;
 </script>
-
-</body>
-</html>
