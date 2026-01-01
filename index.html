@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Scanner de Código de Barras</title>
+<title>Scanner Híbrido de Código de Barras</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- QuaggaJS (iOS) -->
@@ -67,9 +67,8 @@ svg { margin-bottom: 15px; }
 
 <body>
 
-<h2>📷 Scanner de Código de Barras</h2>
+<h2>📷 Scanner Híbrido</h2>
 
-<!-- Entrada manual -->
 <div style="display:flex; gap:5px;">
     <input id="inputCodigo" placeholder="Digite qualquer código">
     <button onclick="adicionarCodigoManual()">Adicionar</button>
@@ -97,8 +96,8 @@ svg { margin-bottom: 15px; }
    VARIÁVEIS
 ========================= */
 let codigos = [];
-let usandoQuagga = false;
 let scannerAtivo = false;
+let usandoQuagga = false;
 let detector = null;
 let stream = null;
 let track = null;
@@ -115,6 +114,7 @@ const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 ========================= */
 function ean13Valido(codigo) {
     if (!/^\d{13}$/.test(codigo)) return false;
+
     let soma = 0;
     for (let i = 0; i < 12; i++) {
         soma += (i % 2 === 0) ? +codigo[i] : +codigo[i] * 3;
@@ -140,6 +140,7 @@ function adicionarCodigoManual() {
 function atualizarLista() {
     const div = document.getElementById("codigos");
     div.innerHTML = "";
+
     codigos.forEach((c, i) => {
         div.innerHTML += `
         <div class="codigo">
@@ -162,7 +163,10 @@ function gerarImagens() {
     div.innerHTML = "<h3>Imagens:</h3>";
 
     codigos.forEach(codigo => {
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const svg = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg"
+        );
         div.appendChild(svg);
 
         JsBarcode(svg, codigo, {
@@ -184,14 +188,14 @@ function limparLista() {
 }
 
 /* =========================
-   SCANNER HÍBRIDO
+   SCANNER
 ========================= */
 function iniciarScanner() {
     if (scannerAtivo) return;
 
+    scannerAtivo = true;
     document.getElementById("camera").style.display = "block";
     document.getElementById("btnCamera").textContent = "Fechar câmera";
-    scannerAtivo = true;
 
     if (isIOS) iniciarQuagga();
     else iniciarBarcodeDetector();
@@ -226,7 +230,7 @@ async function iniciarBarcodeDetector() {
     }
 
     const camera = document.getElementById("camera");
-    camera.innerHTML = ""; // ← ISSO EVITA CÂMERA PRETA
+    camera.innerHTML = "";
 
     detector = new BarcodeDetector({ formats: ["ean_13", "code_128"] });
 
@@ -241,13 +245,20 @@ async function iniciarBarcodeDetector() {
     video.playsInline = true;
 
     camera.appendChild(video);
-
-    await video.play(); // ← ESSENCIAL
+    await video.play();
 
     track = stream.getVideoTracks()[0];
 
+    scanInterval = setInterval(async () => {
+        const codes = await detector.detect(video);
+        for (const c of codes) {
+            if (adicionarCodigo(c.rawValue)) {
+                pararScanner();
+                return;
+            }
+        }
+    }, 600);
 }
-
 
 /* =========================
    iOS → QuaggaJS
@@ -285,9 +296,12 @@ function iniciarQuagga() {
 ========================= */
 async function toggleFlash() {
     if (!track) return alert("Flash não suportado");
+
     flashAtivo = !flashAtivo;
     try {
-        await track.applyConstraints({ advanced: [{ torch: flashAtivo }] });
+        await track.applyConstraints({
+            advanced: [{ torch: flashAtivo }]
+        });
         document.getElementById("btnFlash").textContent =
             flashAtivo ? "Desligar flash" : "Ligar flash";
     } catch {
