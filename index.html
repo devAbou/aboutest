@@ -225,6 +225,9 @@ async function iniciarBarcodeDetector() {
         return;
     }
 
+    const camera = document.getElementById("camera");
+    camera.innerHTML = ""; // ← ISSO EVITA CÂMERA PRETA
+
     detector = new BarcodeDetector({ formats: ["ean_13", "code_128"] });
 
     stream = await navigator.mediaDevices.getUserMedia({
@@ -234,21 +237,17 @@ async function iniciarBarcodeDetector() {
     const video = document.createElement("video");
     video.srcObject = stream;
     video.autoplay = true;
+    video.muted = true;
     video.playsInline = true;
 
-    document.getElementById("camera").appendChild(video);
-    track = stream.getVideoTracks()[0];
+    camera.appendChild(video);
 
-    scanInterval = setInterval(async () => {
-        const codes = await detector.detect(video);
-        for (const c of codes) {
-            if (adicionarCodigo(c.rawValue)) {
-                pararScanner();
-                return;
-            }
-        }
-    }, 600);
+    await video.play(); // ← ESSENCIAL
+
+    track = stream.getVideoTracks()[0];
+    ...
 }
+
 
 /* =========================
    iOS → QuaggaJS
