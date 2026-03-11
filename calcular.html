@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Calculadora de Jornada</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:20px;
+max-width:500px;
+margin:auto;
+}
+
+h2{
+text-align:center;
+}
+
+.container{
+background:#fff;
+padding:20px;
+border-radius:8px;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+label{
+margin-top:10px;
+display:block;
+font-weight:bold;
+}
+
+input{
+width:100%;
+padding:10px;
+font-size:16px;
+margin-top:5px;
+}
+
+#resultado{
+margin-top:20px;
+font-size:18px;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+<body>
+
+<h2>⏱ Calculadora de Jornada</h2>
+
+<div class="container">
+
+<label>Entrada</label> <input type="time" id="entrada">
+
+<label>Saída para intervalo</label> <input type="time" id="saidaIntervalo">
+
+<label>Carga horária</label> <input type="time" id="cargaHoraria">
+
+<label>Duração do intervalo</label> <input type="time" id="duracaoIntervalo">
+
+<div id="resultado"></div>
+
+</div>
+
+<script>
+
+const PADRAO_CARGA="07:20"
+const PADRAO_INTERVALO="01:10"
+
+function horaParaMinutos(h){
+
+if(!h)return 0
+
+const p=h.split(":")
+return parseInt(p[0])*60+parseInt(p[1])
+
+}
+
+function minutosParaHora(m){
+
+m=((m%1440)+1440)%1440
+
+const h=Math.floor(m/60)
+const min=m%60
+
+return String(h).padStart(2,"0")+":"+String(min).padStart(2,"0")
+
+}
+
+function calcular(){
+
+const entrada=document.getElementById("entrada").value
+const saidaIntervalo=document.getElementById("saidaIntervalo").value
+const carga=document.getElementById("cargaHoraria").value
+const intervalo=document.getElementById("duracaoIntervalo").value
+
+if(!entrada||!saidaIntervalo||!carga||!intervalo)return
+
+const minutosEntrada=horaParaMinutos(entrada)
+const minutosSaidaIntervalo=horaParaMinutos(saidaIntervalo)
+const cargaHoraria=horaParaMinutos(carga)
+const duracaoIntervalo=horaParaMinutos(intervalo)
+
+const tempoTrabalhado=minutosSaidaIntervalo-minutosEntrada
+const tempoRestante=cargaHoraria-tempoTrabalhado
+
+const retornoIntervalo=minutosSaidaIntervalo+duracaoIntervalo
+const novaSaida=retornoIntervalo+tempoRestante
+
+const retorno=minutosParaHora(retornoIntervalo)
+const horaSaida=minutosParaHora(novaSaida)
+
+document.getElementById("resultado").innerHTML=
+
+"🔁 Retorno do intervalo: "+retorno+"<br>"+
+"🏁 Horário de saída: "+horaSaida
+
+salvar()
+
+}
+
+function salvar(){
+
+localStorage.setItem("carga",document.getElementById("cargaHoraria").value)
+localStorage.setItem("intervalo",document.getElementById("duracaoIntervalo").value)
+
+}
+
+function carregar(){
+
+const carga=localStorage.getItem("carga")
+const intervalo=localStorage.getItem("intervalo")
+
+document.getElementById("cargaHoraria").value=carga||PADRAO_CARGA
+document.getElementById("duracaoIntervalo").value=intervalo||PADRAO_INTERVALO
+
+}
+
+document.querySelectorAll("input").forEach(i=>{
+i.addEventListener("input",calcular)
+})
+
+carregar()
+
+</script>
+
+</body>
+</html>
