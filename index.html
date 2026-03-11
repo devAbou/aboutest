@@ -91,22 +91,6 @@ navigator.serviceWorker.register("sw.js")
 
 <h2>📷 Scanner de Código de Barras</h2>
 
-<div id="calcHoras">
-
-<h3>⏱ Calculadora de Jornada</h3>
-
-<label>Entrada</label> <input type="time" id="entrada">
-
-<label>Saída para intervalo</label> <input type="time" id="saidaIntervalo">
-
-<label>Carga horária</label> <input type="time" id="cargaHoraria">
-
-<label>Duração do intervalo</label> <input type="time" id="duracaoIntervalo">
-
-<div id="resultadoHoras"></div>
-
-</div>
-
 <div style="display:flex;gap:5px;">
 <input id="inputCodigo" placeholder="Digite qualquer código">
 <button onclick="adicionarCodigoManual()">Adicionar</button>
@@ -128,84 +112,6 @@ navigator.serviceWorker.register("sw.js")
 </div>
 
 <script>
-
-/* =========================
-CALCULO DE HORAS
-========================= */
-
-function horaParaMinutos(h){
-
-if(!h)return 0
-
-const p=h.split(":")
-
-return parseInt(p[0])*60+parseInt(p[1])
-
-}
-
-function minutosParaHora(m){
-
-m=((m%1440)+1440)%1440
-
-const h=Math.floor(m/60)
-const min=m%60
-
-return String(h).padStart(2,"0")+":"+String(min).padStart(2,"0")
-
-}
-
-function calcularHoras(){
-
-const entrada=document.getElementById("entrada").value
-const saidaIntervalo=document.getElementById("saidaIntervalo").value
-const cargaInput=document.getElementById("cargaHoraria").value
-const intervaloInput=document.getElementById("duracaoIntervalo").value
-
-if(!entrada||!saidaIntervalo||!cargaInput||!intervaloInput)return
-
-const minutosEntrada=horaParaMinutos(entrada)
-const minutosSaidaIntervalo=horaParaMinutos(saidaIntervalo)
-const cargaHoraria=horaParaMinutos(cargaInput)
-const duracaoIntervalo=horaParaMinutos(intervaloInput)
-
-const tempoTrabalhado=minutosSaidaIntervalo-minutosEntrada
-const tempoRestante=cargaHoraria-tempoTrabalhado
-const retornoIntervalo=minutosSaidaIntervalo+duracaoIntervalo
-const novaSaida=retornoIntervalo+tempoRestante
-
-const retorno=minutosParaHora(retornoIntervalo)
-const horaSaida=minutosParaHora(novaSaida)
-
-document.getElementById("resultadoHoras").innerHTML=
-"🔁 Retorno intervalo: "+retorno+"<br>"+
-"🏁 Saída final: "+horaSaida
-
-salvarConfig()
-
-}
-
-function salvarConfig(){
-
-localStorage.setItem("cargaHoraria",document.getElementById("cargaHoraria").value)
-localStorage.setItem("duracaoIntervalo",document.getElementById("duracaoIntervalo").value)
-
-}
-
-function carregarConfig(){
-
-const carga=localStorage.getItem("cargaHoraria")
-const intervalo=localStorage.getItem("duracaoIntervalo")
-
-if(carga)document.getElementById("cargaHoraria").value=carga
-if(intervalo)document.getElementById("duracaoIntervalo").value=intervalo
-
-}
-
-document.querySelectorAll("#calcHoras input").forEach(i=>{
-i.addEventListener("input",calcularHoras)
-})
-
-carregarConfig()
 
 /* =========================
 SCANNER
