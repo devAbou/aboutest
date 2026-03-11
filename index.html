@@ -22,6 +22,17 @@ body {
 }
 h2 { text-align: center; }
 
+<div id="calcHoras" style="background:#fff;padding:10px;border-radius:6px;margin-bottom:10px;">
+<h3>⏱ Calcular horário de saída</h3>
+
+<input id="entrada" placeholder="Entrada (ex: 13:24)">
+<input id="saidaIntervalo" placeholder="Saída para intervalo (ex: 16:10)">
+
+<button onclick="calcularHoras()">Calcular</button>
+
+<div id="resultadoHoras" style="margin-top:10px;font-weight:bold;"></div>
+</div>
+
 #camera {
     display: none;
     width: 100%;
@@ -317,6 +328,94 @@ async function toggleFlash() {
         flashAtivo = false;
     }
 }
+
+    /* =========================
+CALCULO DE HORAS AVANÇADO
+========================= */
+
+function horaParaMinutos(hora) {
+if (!hora) return 0
+const [h,m] = hora.split(":")
+return parseInt(h)*60 + parseInt(m)
+}
+
+function minutosParaHora(min) {
+
+```
+min = ((min % 1440) + 1440) % 1440
+
+const h = Math.floor(min/60)
+const m = min%60
+
+return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")
+```
+
+}
+
+function calcularHoras(){
+
+```
+const entrada = document.getElementById("entrada").value
+const saidaIntervalo = document.getElementById("saidaIntervalo").value
+const cargaHorariaInput = document.getElementById("cargaHoraria").value
+const duracaoIntervaloInput = document.getElementById("duracaoIntervalo").value
+
+if(!entrada || !saidaIntervalo || !cargaHorariaInput || !duracaoIntervaloInput){
+    return
+}
+
+const minutosEntrada = horaParaMinutos(entrada)
+const minutosSaidaIntervalo = horaParaMinutos(saidaIntervalo)
+const cargaHoraria = horaParaMinutos(cargaHorariaInput)
+const duracaoIntervalo = horaParaMinutos(duracaoIntervaloInput)
+
+const tempoTrabalhado = minutosSaidaIntervalo - minutosEntrada
+
+const tempoRestante = cargaHoraria - tempoTrabalhado
+
+const retornoIntervalo = minutosSaidaIntervalo + duracaoIntervalo
+
+const novaSaida = retornoIntervalo + tempoRestante
+
+const retorno = minutosParaHora(retornoIntervalo)
+const horaSaida = minutosParaHora(novaSaida)
+
+document.getElementById("resultadoHoras").innerHTML =
+"🔁 Retorno intervalo: "+retorno+"<br>"+
+"🏁 Saída final: "+horaSaida
+
+salvarConfig()
+```
+
+}
+
+/* =========================
+SALVAR CONFIG
+========================= */
+
+function salvarConfig(){
+
+localStorage.setItem("cargaHoraria",document.getElementById("cargaHoraria").value)
+localStorage.setItem("duracaoIntervalo",document.getElementById("duracaoIntervalo").value)
+
+}
+
+function carregarConfig(){
+
+const carga = localStorage.getItem("cargaHoraria")
+const intervalo = localStorage.getItem("duracaoIntervalo")
+
+if(carga) document.getElementById("cargaHoraria").value = carga
+if(intervalo) document.getElementById("duracaoIntervalo").value = intervalo
+
+}
+
+document.querySelectorAll("#calcHoras input").forEach(i=>{
+i.addEventListener("input",calcularHoras)
+})
+
+carregarConfig()
+
 
 /* =========================
    BOTÕES
