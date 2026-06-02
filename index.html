@@ -2,7 +2,9 @@
 <head>  <link rel="manifest" href="manifest.json">  
 <meta name="theme-color" content="#000000">  <meta charset="UTF-8">  
 <title>Scanner de Código de Barras</title>  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>  <style>  
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>  <style>  
   
 body{  
 font-family:Arial;  
@@ -81,7 +83,11 @@ Adicionar tabela Lua
     
 <button onclick="adicionarCodigoManual()">Adicionar</button>  
 </div>  <button id="btnCamera">Abrir câmera</button> <button id="btnFlash">Ligar flash</button>
+<input type="file" id="imagemEAN" accept="image/*">
 
+<button onclick="importarEANsDaImagem()">
+Importar EANs da imagem
+</button>
 <div id="camera"></div>  <button onclick="gerarImagens()">Gerar imagens</button> <button onclick="limparLista()">Limpar lista</button>
 
 <div id="lista">  
@@ -168,6 +174,66 @@ const input=document.getElementById("inputCodigo")
 if(adicionarCodigo(input.value.trim()))input.value=""  
   
 }  
+
+async function importarEANsDaImagem(){
+
+    const arquivo =
+        document.getElementById("imagemEAN").files[0];
+
+    if(!arquivo){
+        alert("Selecione uma imagem.");
+        return;
+    }
+
+    document.body.style.cursor = "wait";
+
+    try{
+
+        const resultado =
+            await Tesseract.recognize(
+                arquivo,
+                "eng"
+            );
+
+        const texto =
+            resultado.data.text;
+
+        console.log(texto);
+
+        // Procura todos os números com 13 dígitos
+        const eans =
+            texto.match(/\b\d{13}\b/g) || [];
+
+        let adicionados = 0;
+
+        eans.forEach(ean=>{
+
+            if(adicionarCodigo(ean)){
+                adicionados++;
+            }
+
+        });
+
+        atualizarLista();
+
+        alert(
+            adicionados +
+            " EAN(s) encontrado(s)"
+        );
+
+    }catch(err){
+
+        console.error(err);
+
+        alert(
+            "Erro ao processar imagem"
+        );
+
+    }
+
+    document.body.style.cursor = "default";
+
+}
   
 function atualizarLista(){  
   
