@@ -103,6 +103,12 @@ navigator.serviceWorker.register("sw.js")
 <button onclick="gerarImagens()">Gerar imagens</button> <button onclick="limparLista()">Limpar lista</button>
 
 <div id="lista">
+<div id="luaTable" style="background:#fff;padding:10px;margin-top:10px;border-radius:6px;">
+    <h3>Tabela Lua:</h3>
+    <textarea id="luaOutput" readonly style="width:100%;height:200px;font-family:monospace;"></textarea>
+</div>
+
+  
 <h3>Códigos:</h3>
 <div id="codigos"></div>
 </div>
@@ -164,21 +170,39 @@ if(adicionarCodigo(input.value.trim()))input.value=""
 
 function atualizarLista(){
 
-const div=document.getElementById("codigos")
+    const div=document.getElementById("codigos")
 
-div.innerHTML=""
+    div.innerHTML=""
 
-codigos.forEach((c,i)=>{
+    codigos.forEach((c,i)=>{
 
-div.innerHTML+=`
-<div class="codigo">
-<span>${c}</span>
-<button class="remover" onclick="removerCodigo(${i})">×</button>
-</div>`
+        div.innerHTML+=`
+        <div class="codigo">
+            <span>${c}</span>
+            <button class="remover" onclick="removerCodigo(${i})">×</button>
+        </div>`
 
-})
+    })
+
+    atualizarTabelaLua()
 
 }
+
+  function atualizarTabelaLua(){
+
+    const lua = document.getElementById("luaOutput")
+
+    let texto = "local codigos = {\n"
+
+    codigos.forEach(codigo=>{
+        texto += `    "${codigo}",\n`
+    })
+
+    texto += "}"
+
+    lua.value = texto
+
+  }
 
 function removerCodigo(i){
 
