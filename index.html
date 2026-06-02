@@ -83,8 +83,13 @@ Adicionar tabela Lua
     
 <button onclick="adicionarCodigoManual()">Adicionar</button>  
 </div>  <button id="btnCamera">Abrir câmera</button> <button id="btnFlash">Ligar flash</button>
-<input type="file" id="imagemEAN" accept="image/*">
 
+<input
+    type="file"
+    id="imagemEAN"
+    accept="image/*"
+    multiple
+>
 <button onclick="importarEANsDaImagem()">
 Importar EANs da imagem
 </button>
@@ -177,48 +182,51 @@ if(adicionarCodigo(input.value.trim()))input.value=""
 
 async function importarEANsDaImagem(){
 
-    const arquivo =
-        document.getElementById("imagemEAN").files[0];
+    const arquivos =
+        document.getElementById("imagemEAN").files;
 
-    if(!arquivo){
-        alert("Selecione uma imagem.");
+    if(!arquivos.length){
+        alert("Selecione uma ou mais imagens.");
         return;
     }
+
+    let totalAdicionados = 0;
 
     document.body.style.cursor = "wait";
 
     try{
 
-        const resultado =
-            await Tesseract.recognize(
-                arquivo,
-                "eng"
-            );
+        for(const arquivo of arquivos){
 
-        const texto =
-            resultado.data.text;
+            const resultado =
+                await Tesseract.recognize(
+                    arquivo,
+                    "eng"
+                );
 
-        console.log(texto);
+            const texto =
+                resultado.data.text;
 
-        // Procura todos os números com 13 dígitos
-        const eans =
-            texto.match(/\b\d{13}\b/g) || [];
+            const regex =
+                /ean\s*:\s*(\d{13})/gi;
 
-        let adicionados = 0;
+            let match;
 
-        eans.forEach(ean=>{
+            while((match = regex.exec(texto)) !== null){
 
-            if(adicionarCodigo(ean)){
-                adicionados++;
+                if(adicionarCodigo(match[1])){
+                    totalAdicionados++;
+                }
+
             }
 
-        });
+        }
 
         atualizarLista();
 
         alert(
-            adicionados +
-            " EAN(s) encontrado(s)"
+            totalAdicionados +
+            " EAN(s) encontrados."
         );
 
     }catch(err){
@@ -226,7 +234,7 @@ async function importarEANsDaImagem(){
         console.error(err);
 
         alert(
-            "Erro ao processar imagem"
+            "Erro ao processar imagens."
         );
 
     }
