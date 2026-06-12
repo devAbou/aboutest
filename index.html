@@ -73,13 +73,7 @@ navigator.serviceWorker.register("sw.js")
 }  
 </script>  <body>  <h2>📷 Scanner de Código de Barras</h2>  <div style="display:flex;gap:5px;">  
 <input id="inputCodigo" placeholder="Digite qualquer código">  
-<textarea id="luaTabela"
-placeholder="Cole aqui uma tabela Lua com EANs"
-style="width:100%;height:120px;margin-top:10px;"></textarea>
 
-<button onclick="importarTabelaLua()">
-Adicionar tabela Lua
-</button>
     
 <button onclick="adicionarCodigoManual()">Adicionar</button>  
 </div>  <button id="btnCamera">Abrir câmera</button> <button id="btnFlash">Ligar flash</button>
