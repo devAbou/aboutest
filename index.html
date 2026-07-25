@@ -223,15 +223,15 @@ async function importarEANsDaImagem(){
             " EAN(s) encontrados."
         );
 
-    }catch(err){
+    }
+    catch(err){
 
-        console.error(err);
+    console.error(err);
 
-        alert(
-            "Erro ao processar imagens."
-        );
+    alert(err.message);
 
     }
+    
 
     document.body.style.cursor = "default";
 
