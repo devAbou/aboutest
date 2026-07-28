@@ -268,7 +268,11 @@ await worker.terminate();
 
     console.error(err);
 
-    alert(err.message);
+    alert(
+        "Tipo: " + typeof err +
+        "\n\nValor:\n" +
+        String(err)
+    );
 
     }
     
