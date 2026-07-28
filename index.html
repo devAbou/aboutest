@@ -142,8 +142,7 @@ async function reduzirImagem(file){
 
 
 
-
-      const img = new Image();
+const img = new Image();
 
 img.onload = async () => {
 
@@ -157,7 +156,7 @@ img.onload = async () => {
 
 };
 
-
+img.src = URL.createObjectURL(file);
 
     });
 
