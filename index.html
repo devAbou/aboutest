@@ -140,28 +140,35 @@ async function reduzirImagem(file){
 
     return new Promise(resolve=>{
 
+        const img = new Image();
 
+        img.onload = ()=>{
 
-const img = new Image();
+            const max = 1200;
 
-img.onload = async () => {
+            let w = img.width;
+            let h = img.height;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
+            if(w > max){
+                h *= max / w;
+                w = max;
+            }
 
-    canvas.getContext("2d").drawImage(img, 0, 0);
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
 
-    const resultado = await Tesseract.recognize(canvas, "eng");
+            canvas.getContext("2d").drawImage(img,0,0,w,h);
 
-};
+            resolve(canvas);
 
-img.src = URL.createObjectURL(file);
+        };
+
+        img.src = URL.createObjectURL(file);
 
     });
 
 }
-
   
   function importarTabelaLua(){
 
