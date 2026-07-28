@@ -229,10 +229,12 @@ async function importarEANsDaImagem(){
 
 const canvas = await reduzirImagem(arquivo);
 
-const resultado = await Tesseract.recognize(
-    canvas,
-    "eng"
-);
+
+          const worker = await Tesseract.createWorker("eng");
+
+const resultado = await worker.recognize(arquivo);
+
+await worker.terminate();
           
             
 
