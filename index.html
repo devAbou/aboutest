@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#000000">  <meta charset="UTF-8">  
 <title>Scanner de Código de Barras</title>  
 <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="js/tesseract.min.js"></script>
   <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>  <style>  
   
 body{  
@@ -253,14 +253,17 @@ async function importarEANsDaImagem(){
 
           const canvas = await reduzirImagem(arquivo);
 
-const resultado = await Tesseract.recognize(
-    canvas,
-    "eng"
-);
-            
+    const worker = await Tesseract.createWorker("por+eng", 1, {
+        workerPath: "tesseract/worker.min.js",
+        corePath: "tesseract/tesseract-core.wasm.js",
+        langPath: "lang"
+    });
 
-            const texto =
-                resultado.data.text;
+    const resultado = await worker.recognize(canvas);
+
+    await worker.terminate();
+
+    const texto = resultado.data.text;
 
             const regex =
                 /ean\s*:\s*(\d{13})/gi;
