@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#000000">  <meta charset="UTF-8">  
 <title>Scanner de Código de Barras</title>  
 <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-<script src="js/tesseract.min.js"></script>
+<script src="tesseract.min.js"></script>
   <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>  <style>  
   
 body{  
@@ -254,9 +254,9 @@ async function importarEANsDaImagem(){
           const canvas = await reduzirImagem(arquivo);
 
     const worker = await Tesseract.createWorker("por+eng", 1, {
-        workerPath: "tesseract/worker.min.js",
-        corePath: "tesseract/tesseract-core.wasm.js",
-        langPath: "lang"
+        workerPath: "worker.min.js",
+        corePath: "tesseract-core.wasm.js",
+        langPath: "aboutest"
     });
 
     const resultado = await worker.recognize(canvas);
