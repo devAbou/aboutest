@@ -253,11 +253,13 @@ async function importarEANsDaImagem(){
 
           const canvas = await reduzirImagem(arquivo);
 
-    const worker = await Tesseract.createWorker("por+eng", 1, {
-        workerPath: "worker.min.js",
-        corePath: "tesseract-core.wasm.js",
-        langPath: "eng.traineddata"
-    });
+    
+
+          const worker = await Tesseract.createWorker("por+eng", 1, {
+    workerPath: "./worker.min.js",
+    corePath: "./tesseract-core.wasm.js",
+    langPath: "."
+});
 
     const resultado = await worker.recognize(canvas);
 
